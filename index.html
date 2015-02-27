@@ -27,13 +27,15 @@ body {
 			this.fireRate = 1000;
 			this.nextFire = 0;
 			this.alive = true;
+			
+			// updated for new enemy tank graphic
+			this.shadow = game.add.sprite(x, y, 'eshadow');
+			this.tank = game.add.sprite(x, y, 'etank');
+			this.turret = game.add.sprite(x, y, 'eturret');
 
-			this.shadow = game.add.sprite(x, y, 'enemy', 'shadow');
-			this.tank = game.add.sprite(x, y, 'enemy', 'tank1');
-			this.turret = game.add.sprite(x, y, 'enemy', 'turret');
-
-			this.shadow.anchor.set(0.5);
-			this.tank.anchor.set(0.5);
+			this.shadow.anchor.set(0.5, 0.5);
+			// updated anchor point for new enemy tank
+			this.tank.anchor.set(0.6, 0.5);
 			this.turret.anchor.set(0.3, 0.5);
 
 			this.tank.name = index.toString();
@@ -85,8 +87,17 @@ body {
 					this.nextFire = this.game.time.now + this.fireRate;
 
 					var bullet = this.bullets.getFirstDead();
-
-					bullet.reset(this.turret.x, this.turret.y);
+					
+					//  Now work out where the END of the turret is.
+					// make a new phaser.point
+					var p = new Phaser.Point(this.turret.x, this.turret.y);
+					// (var.x,var.y, the roration, false, offset to the point you want)
+					p.rotate(p.x, p.y, this.turret.rotation, false, 60);
+				
+					//  Re-position the bullet where the end of the turret is
+					bullet.reset(p.x , p.y );
+					
+					//bullet.reset(this.turret.x, this.turret.y); old code
 
 					bullet.rotation = this.game.physics.arcade.moveToObject(
 							bullet, this.player, 500);
@@ -103,11 +114,20 @@ body {
 		});
 
 		function preload() {
-
-			game.load.atlas('tank', 'assets/tanks.png',
-					'assets/tanks.json');
-			game.load.atlas('enemy', 'assets/enemy-tanks.png',
-					'assets/tanks.json');
+			// added in new tank body
+			game.load.image('tank', 'assets/TankBottom.png');
+			// added in new tank turret
+			game.load.image('turret', 'assets/TankTop.png');
+			// added in shadow from old tank.. really don't need
+			game.load.image('shadow', 'assets/shadow.png');
+			// game.load.atlas('enemy', 'assets/enemy-tanks.png',
+			//		'assets/tanks.json');
+			
+			// updated for new enemy tank
+			game.load.image('etank', 'assets/ETankBottom.png');
+			game.load.image('eturret', 'assets/ETankTop.png');
+			game.load.image('eshadow', 'assets/shadow.png');
+			
 			game.load.image('logo', 'assets/logo.png');
 			game.load.image('bullet', 'assets/bullet.png');
 			game.load.image('earth', 'assets/scorched_earth.png');
@@ -146,11 +166,13 @@ body {
 			land = game.add.tileSprite(0, 0, 800, 600, 'earth');
 			land.fixedToCamera = true;
 
-			//  The base of our tank
-			tank = game.add.sprite(0, 0, 'tank', 'tank1');
-			tank.anchor.setTo(0.5, 0.5);
-			tank.animations.add('move', [ 'tank1', 'tank2', 'tank3', 'tank4',
-					'tank5', 'tank6' ], 20, true);
+			//  The base of our tank *** change line for new tank body
+			tank = game.add.sprite(0, 0, 'tank');
+			// changed anchor point for new tank *** old was (0.5,0.5)
+			tank.anchor.setTo(0.6, 0.5);
+			// took out the tank animations... I did not see any difference
+			// tank.animations.add('move', [ 'tank1', 'tank2', 'tank3', 'tank4',
+			//		'tank5', 'tank6' ], 20, true);
 
 			//  This will force it to decelerate and limit its speed
 			game.physics.enable(tank, Phaser.Physics.ARCADE);
@@ -158,8 +180,8 @@ body {
 			tank.body.maxVelocity.setTo(400, 400);
 			tank.body.collideWorldBounds = true;
 
-			//  Finally the turret that we place on-top of the tank body
-			turret = game.add.sprite(0, 0, 'tank', 'turret');
+			//  Finally the turret that we place on-top of the tank body *** change line for new tank turret
+			turret = game.add.sprite(0, 0, 'turret');
 			turret.anchor.setTo(0.3, 0.5);
 
 			//  The enemies bullet group
@@ -184,7 +206,8 @@ body {
 			}
 
 			//  A shadow below our tank
-			shadow = game.add.sprite(0, 0, 'tank', 'shadow');
+			// changed for new tank body *** still the old graphic
+			shadow = game.add.sprite(0, 0,'shadow');
 			shadow.anchor.setTo(0.5, 0.5);
 
 			//  Our bullet group
@@ -221,6 +244,12 @@ body {
 
 			cursors = game.input.keyboard.createCursorKeys();
 
+			// I Prefer the ASWD keys for driving
+			// setup keyboard input
+			UpKey = game.input.keyboard.addKey(Phaser.Keyboard.W);
+			LeftKey = game.input.keyboard.addKey(Phaser.Keyboard.A);
+			RightKey = game.input.keyboard.addKey(Phaser.Keyboard.D);
+			DownKey = game.input.keyboard.addKey(Phaser.Keyboard.S);
 		}
 
 		function removeLogo() {
@@ -246,23 +275,36 @@ body {
 					enemies[i].update();
 				}
 			}
-
-			if (cursors.left.isDown) {
+			
+			// when left arrow or "A" key down
+			if (cursors.left.isDown || LeftKey.isDown ) {
 				tank.angle -= 4;
-			} else if (cursors.right.isDown) {
+			// when right arrow or "D" key down
+			} else if (cursors.right.isDown || RightKey.isDown ) {
 				tank.angle += 4;
 			}
-
-			if (cursors.up.isDown) {
+			
+			// when up arrow or "W" key down
+			if (cursors.up.isDown || UpKey.isDown ) {
 				//  The speed we'll travel at
 				currentSpeed = 300;
 			} else {
 				if (currentSpeed > 0) {
 					currentSpeed -= 4;
 				}
+			}	
+			// when down arrow or "S" key down
+			if (cursors.down.isDown || DownKey.isDown ) {
+				//  The speed we'll travel at
+				currentSpeed = -300;
+			} else {
+				if (currentSpeed < 0) {
+					currentSpeed -= 4;
+				}
 			}
 
-			if (currentSpeed > 0) {
+			// this updates the velocity ** fixed to move backwards	
+			if (currentSpeed > -301) {
 				game.physics.arcade.velocityFromRotation(tank.rotation,
 						currentSpeed, tank.body.velocity);
 			}
@@ -313,9 +355,18 @@ body {
 				nextFire = game.time.now + fireRate;
 
 				var bullet = bullets.getFirstExists(false);
-
-				bullet.reset(turret.x, turret.y);
-
+				
+				//bullet.reset(turret.x , turret.y ); **** old code****
+				
+				//  Now work out where the END of the turret is.
+				// make a new phaser.point
+				var p = new Phaser.Point(turret.x, turret.y);
+				// (var.x,var.y, the roration, false, offset to the point you want)
+				p.rotate(p.x, p.y, turret.rotation, false, 60);
+				
+				//  Re-position the bullet where the end of the turret is
+				bullet.reset(p.x , p.y );
+				
 				bullet.rotation = game.physics.arcade.moveToPointer(bullet,
 						1000, game.input.activePointer, 500);
 			}

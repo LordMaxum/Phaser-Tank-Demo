@@ -265,7 +265,11 @@ body {
 					null, this);
 
 			enemiesAlive = 0;
-
+			
+// enemies[1].tank Sprite debug info
+    game.debug.spriteInfo(enemies[1].tank, 32, 200);
+	game.debug.body(enemies[1].tank)
+	
 			for (var i = 0; i < enemies.length; i++) {
 				if (enemies[i].alive) {
 					enemiesAlive++;
@@ -378,7 +382,9 @@ body {
 			// game.debug.text('Active Bullets: ' + bullets.countLiving() + ' / ' + bullets.length, 32, 32);
 			game.debug.text('Enemies: ' + enemiesAlive + ' / ' + enemiesTotal,
 					32, 32);
-
+// player tank Sprite debug info
+    game.debug.spriteInfo(tank, 32, 64);
+	game.debug.body(tank)
 		}
 	</script>
 
